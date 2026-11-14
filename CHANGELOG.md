@@ -2,6 +2,11 @@
 
 AWS CLIP releases use `v0.MINOR.PATCH` until the first complete release, v1.0.0, following neon1's [versioning standard](https://neon1.tech/knowledge/standards/versioning/). Each version below has an annotated tag on the commit it names; the release workflow adds missing tags and never moves one.
 
+## v0.1.1 - 2026-11-13
+
+### Changed
+- Every pull request and every push to main now runs formatting, vet, build, and race-enabled test checks, including the tests that prove denied and unknown commands are refused. A version is tagged only after they pass.
+
 ## v0.1.0 - 2026-09-13
 <!-- commit: c90f092292cd2dd60be89ea906777c667666b4c5 -->
 

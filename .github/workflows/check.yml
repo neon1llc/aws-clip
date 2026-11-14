@@ -1,0 +1,44 @@
+name: check
+
+# The gates every change must pass. They run on pull requests and on main, and the release
+# workflow calls this same workflow, so nothing is tagged unless these pass
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+# Read-only: checks never write to the repository
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Formatting: fail and list the files if any are not gofmt-clean
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt required for:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build ./...
+
+      # The tests include the fail-closed policy tests: denied, unknown, and unconfirmed
+      # commands are refused (internal/cli/execution_policy_test.go). The race detector is on
+      - name: go test
+        run: go test -race ./...
