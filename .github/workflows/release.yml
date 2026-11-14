@@ -8,8 +8,9 @@ on:
   push:
     branches: [main]
 
+# Read-only by default; only the tag job below can write
 permissions:
-  contents: write
+  contents: read
 
 # One run at a time, never cancelled halfway
 concurrency:
@@ -17,8 +18,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The same gates as the check workflow. The tag job waits for them, so a failing
+  # main is never tagged
+  check:
+    uses: ./.github/workflows/check.yml
+
   tag:
+    needs: check
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
