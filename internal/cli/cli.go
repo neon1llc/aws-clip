@@ -601,12 +601,11 @@ Safety options:
   --approve-account ID       Bind guarded execution to the verified account
   --approve all-sso-sessions Confirm the global effect of AWS SSO logout
 
-Profiles, login, logout, context, exec, and doctor delegate configuration,
-authentication, credentials, and service calls to AWS CLI v2. Exec requires an
-explicit profile, classifies the command, applies configured target policy,
-and confirms mutating or unknown operations. Account-constrained execution
-also verifies STS identity. Plan and run retain policy-controlled sequences for
-operations that need named approval, fail-fast behavior, and step visibility.
-The -- separator is mandatory for exec, and every following value remains a
+Profiles, login, logout, context, exec, and doctor leave configuration,
+authentication, credentials, and service calls to AWS CLI v2. Exec needs an
+explicit profile, classifies the command, applies configured policy, and
+confirms mutating or unknown operations. Plan and run keep policy-controlled
+sequences with named approval, fail-fast behavior, and step visibility.
+The -- separator is mandatory for exec, and every value after it stays a
 literal AWS argument.
 `
