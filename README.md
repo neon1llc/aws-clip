@@ -400,3 +400,5 @@ make check
 The check target verifies formatting, runs static analysis, and executes a
 hermetic process-level suite. Tests use a local fake executable and do not
 contact AWS.
+
+Releases follow neon1's four [release levels](https://github.com/neon1llc/neon1-corpus/blob/main/corpus/standards/versioning.md#release-levels): Implemented, Verified, Released, and Qualified. CI's checks are the evidence for Verified. Qualified needs use outside the author's machine, following only this README.
