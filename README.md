@@ -2,7 +2,7 @@
 
 AWS CLI Plus (`aws-clip`) makes multi-profile AWS CLI work safer. It finds the profiles AWS CLI v2 already knows, logs in through each profile's own path, checks the active account and principal, and guards risky commands by account.
 
-It doesn't replace AWS CLI. AWS CLI v2 still handles configuration, credentials, IAM Identity Center, login, service coverage, retries, requests, and output. Use `aws` directly for ordinary one-off work. Use `aws-clip` when profile isolation, identity checks, production account guards, or explicit approval lower your risk.
+It doesn't replace AWS CLI. AWS CLI v2 still handles configuration, credentials, IAM Identity Center, login, service coverage, retries, requests, and output. Use `aws` directly for ordinary one-off work.
 
 ## Install
 
@@ -21,8 +21,6 @@ aws-clip doctor
 ```
 
 ## Start with a profile
-
-List the profiles AWS CLI has already merged from its configuration:
 
 ```sh
 aws-clip profiles
@@ -51,7 +49,7 @@ You can also select a profile with `AWS_CLIP_PROFILE` or the configuration file.
 - Configured profiles with no declared provider can bootstrap AWS local login after an identity probe fails, if your AWS CLI supports it.
 - Static keys, credential processes, web identity, instance or container roles, and the default provider chain stay with their own provider.
 
-After login, `aws-clip` checks STS identity again and reports the account and principal. It never exports or stores session credentials.
+After login, `aws-clip` checks STS identity again and reports the account and principal.
 
 ```sh
 aws-clip --profile production login
@@ -68,7 +66,7 @@ Profiles backed by external or static providers have no login or logout action. 
 
 ## Verify the active context
 
-`context` calls `aws sts get-caller-identity` through the selected profile and reports non-secret context only:
+`context` calls `aws sts get-caller-identity` through the selected profile and reports non-secret context only.
 
 ```sh
 aws-clip --profile production --region us-east-1 context
@@ -195,8 +193,6 @@ aws-clip --profile production plan --format json release-check.json
 
 The plan shows effective context, protected account configuration, whether account approval is needed, each `service:operation`, and its policy decision. Argument values are omitted because they may hold sensitive data. JSON plans are a `schema_version: 1` contract with ordered steps.
 
-Run it after reviewing the file and plan:
-
 ```sh
 aws-clip --profile production run --approve release-check release-check.json
 ```
@@ -289,7 +285,7 @@ When any standard stream isn't a terminal, `aws-clip` sets `AWS_PAGER` to an emp
 make check
 ```
 
-This checks formatting, runs static analysis, and runs a hermetic process-level suite. Tests use a local fake executable and never contact AWS.
+Tests use a local fake executable and never contact AWS.
 
 Releases follow neon1's four [release levels](https://github.com/neon1llc/neon1-corpus/blob/main/corpus/standards/versioning.md#release-levels): Implemented, Verified, Released, and Qualified. CI's checks are the evidence for Verified. Qualified needs use outside the author's machine, following only this README.
 
