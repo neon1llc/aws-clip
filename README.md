@@ -22,10 +22,20 @@ aws-clip is built for the last row. It works beside the others: it uses whatever
 
 ## Install
 
-You need AWS CLI v2 on `PATH` (or its path set in config) and Go 1.22 or newer.
+You need AWS CLI v2 on `PATH` (or its path set in config).
+
+With Go 1.22 or newer:
 
 ```sh
 go install github.com/neon1llc/aws-clip/cmd/aws-clip@latest
+aws-clip doctor
+```
+
+Or download a prebuilt binary for macOS or Linux (arm64 or amd64) from the [latest release](https://github.com/neon1llc/aws-clip/releases/latest). Check it against `checksums.txt` and put it on your `PATH`:
+
+```sh
+sha256sum --check --ignore-missing checksums.txt   # on macOS: shasum -a 256 --check --ignore-missing checksums.txt
+chmod +x aws-clip_linux_amd64 && mv aws-clip_linux_amd64 ~/.local/bin/aws-clip
 aws-clip doctor
 ```
 

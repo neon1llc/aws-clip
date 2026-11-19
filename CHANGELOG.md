@@ -3,6 +3,11 @@
 AWS CLIP releases use `v0.MINOR.PATCH` until the first complete release, v1.0.0, following neon1's [versioning standard](https://neon1.tech/knowledge/standards/versioning/). Each version below has an annotated tag on the commit it names; the release workflow adds missing tags and never moves one.
 
 
+## v0.2.0 - 2026-11-19
+
+### Added
+- Each release carries prebuilt binaries for macOS and Linux (arm64 and amd64) and a `checksums.txt` file. The README says how to check and install them.
+
 ## v0.1.5 - 2026-11-19
 
 ### Changed
