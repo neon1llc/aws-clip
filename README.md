@@ -4,20 +4,36 @@ AWS CLI Plus (`aws-clip`) makes multi-profile AWS CLI work safer. It finds the p
 
 It doesn't replace AWS CLI. AWS CLI v2 still handles configuration, credentials, IAM Identity Center, login, service coverage, retries, requests, and output. Use `aws` directly for ordinary one-off work.
 
+**Status:** v0.x. Tests run against a fake AWS CLI and never contact AWS. It hasn't been used outside its author's machines, so treat it as early software. There are no prebuilt binaries yet.
+
+**What it is not:** access control. It's a confirmation prompt and a context check that runs on your machine before AWS CLI. Anyone with a shell can run `aws` directly, so real limits belong in IAM policies, permission boundaries, and service control policies.
+
+## Where it fits
+
+| Need | Use |
+| --- | --- |
+| Short-lived credentials, SSO login, profile config | AWS CLI v2 itself: [`aws configure sso`](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html) and [`aws login`](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html) |
+| Fast role switching and several consoles open at once | [Granted](https://github.com/fwdcloudsec/granted) |
+| Storing long-lived IAM keys in an OS keystore | An actively maintained [aws-vault fork](https://github.com/ByteNess/aws-vault); the [original](https://github.com/99designs/aws-vault) is abandoned. Better still, move off long-lived keys |
+| Limits that can't be bypassed | IAM, permission boundaries, SCPs, and role design |
+| A prompt and account check at the moment you run a risky CLI command | **aws-clip** |
+
+aws-clip is built for the last row. It works beside the others: it uses whatever login path a profile already declares and doesn't store credentials. What it adds is a check, at the moment of a risky command, that the profile resolves to the account you expect, plus a printed target and a confirmation for anything that isn't clearly read-only. A typical case is a shell that still points at production when you meant development.
+
 ## Install
 
-You need AWS CLI v2 on `PATH` (or its path set in config) and Go 1.22 or newer to build.
+You need AWS CLI v2 on `PATH` (or its path set in config) and Go 1.22 or newer.
+
+```sh
+go install github.com/neon1llc/aws-clip/cmd/aws-clip@latest
+aws-clip doctor
+```
+
+Or build from a clone:
 
 ```sh
 make build
 ./bin/aws-clip doctor
-```
-
-Or install into your Go binary directory:
-
-```sh
-go install ./cmd/aws-clip
-aws-clip doctor
 ```
 
 ## Start with a profile
@@ -105,6 +121,8 @@ aws-clip --profile development --region us-east-1 exec --preview -- \
 The preview shows only `secretsmanager:put-secret-value` and the option names `--secret-id` and `--secret-string`.
 
 Classification is conservative and name-based, so a new, aliased, or ambiguous operation counts as mutating. Policy and confirmation add to IAM, service control policies, budgets, backups, and change management. They don't judge argument values or remote state.
+
+The list of read-looking operations that return secrets is hand-maintained. A new AWS operation that returns credentials under a `get-` name looks read-only until someone adds it. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
 
 ### Restrict direct commands
 

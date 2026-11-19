@@ -7,7 +7,7 @@ package main
 import (
 	"os"
 
-	"github.com/pradeeptathineni/aws-clip/internal/cli"
+	"github.com/neon1llc/aws-clip/internal/cli"
 )
 
 func main() {

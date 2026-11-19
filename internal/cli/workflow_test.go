@@ -290,7 +290,15 @@ func TestSensitiveOutputOperationsRequireExplicitAllowance(t *testing.T) {
 	commands := []string{
 		"cognito-identity:get-open-id-token",
 		"cognito-identity:get-open-id-token-for-developer-identity",
+		"connect:get-federation-token",
+		"ec2:get-password-data",
+		"ecr-public:get-authorization-token",
 		"ecr:get-authorization-token",
+		"gamelift:get-instance-access",
+		"lightsail:get-instance-access-details",
+		"redshift-serverless:get-credentials",
+		"redshift:get-cluster-credentials",
+		"redshift:get-cluster-credentials-with-iam",
 		"secretsmanager:batch-get-secret-value",
 	}
 	for _, command := range commands {

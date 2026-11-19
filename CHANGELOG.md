@@ -3,6 +3,15 @@
 AWS CLIP releases use `v0.MINOR.PATCH` until the first complete release, v1.0.0, following neon1's [versioning standard](https://neon1.tech/knowledge/standards/versioning/). Each version below has an annotated tag on the commit it names; the release workflow adds missing tags and never moves one.
 
 
+## v0.1.5 - 2026-11-19
+
+### Changed
+- The Go module path is now `github.com/neon1llc/aws-clip`, so `go install github.com/neon1llc/aws-clip/cmd/aws-clip@latest` works.
+- The README states the release status, says plainly that aws-clip is not access control, and compares it with AWS CLI v2, Granted, aws-vault, and IAM.
+
+### Fixed
+- More credential-returning operations need explicit confirmation or a workflow allow rule: `redshift get-cluster-credentials`, `redshift-serverless get-credentials`, `ec2 get-password-data`, `ecr-public get-authorization-token`, `lightsail get-instance-access-details`, `connect get-federation-token`, and `gamelift get-instance-access`.
+
 ## v0.1.4 - 2026-11-15
 
 ### Changed

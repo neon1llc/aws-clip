@@ -1,3 +1,3 @@
-module github.com/pradeeptathineni/aws-clip
+module github.com/neon1llc/aws-clip
 
 go 1.22
