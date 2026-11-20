@@ -592,20 +592,16 @@ Wrapper options:
   --read-timeout SECONDS    Set the socket read timeout (0 disables)
 
 Output and workflow options:
-  --format text|json         Select text or stable JSON output
-  --approve NAME             Confirm the exact workflow name for run
+  --format text|json         Output as text or stable JSON
+  --approve NAME             Workflow name to run, exactly
 
 Safety options:
-  --preview                  Explain a redacted exec decision without running AWS CLI
-  --yes                      Approve a mutating, unknown, or sensitive exec command
-  --approve-account ID       Bind guarded execution to the verified account
-  --approve all-sso-sessions Confirm the global effect of AWS SSO logout
+  --preview                  Show the exec decision without running AWS CLI
+  --yes                      Approve a mutating, unknown, or sensitive command
+  --approve-account ID       Require this verified account
+  --approve all-sso-sessions Approve clearing all SSO sessions on logout
 
-Profiles, login, logout, context, exec, and doctor leave configuration,
-authentication, credentials, and service calls to AWS CLI v2. Exec needs an
-explicit profile, classifies the command, applies configured policy, and
-confirms mutating or unknown operations. Plan and run keep policy-controlled
-sequences with named approval, fail-fast behavior, and step visibility.
-The -- separator is mandatory for exec, and every value after it stays a
-literal AWS argument.
+exec needs an explicit profile. Everything after its required -- passes to
+AWS CLI as literal arguments. AWS CLI v2 handles configuration, credentials,
+and service calls.
 `

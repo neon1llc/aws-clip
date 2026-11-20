@@ -1,12 +1,12 @@
 # AWS CLI Plus
 
-AWS CLI Plus (`aws-clip`) makes multi-profile AWS CLI work safer. It finds the profiles AWS CLI v2 already knows, logs in through each profile's own path, checks the active account and principal, and guards risky commands by account.
+AWS CLI Plus (`aws-clip`) sits in front of AWS CLI v2 for multi-profile work. It finds the profiles AWS CLI already knows, logs in through each profile's own path, checks the active account and principal, and confirms risky commands against the account you expect.
 
-It doesn't replace AWS CLI. AWS CLI v2 still handles configuration, credentials, IAM Identity Center, login, service coverage, retries, requests, and output. Use `aws` directly for ordinary one-off work.
+AWS CLI v2 still handles configuration, credentials, IAM Identity Center, requests, and output. For ordinary one-off work, use `aws` directly.
 
-**Status:** v0.x. Tests run against a fake AWS CLI and never contact AWS. It hasn't been used outside its author's machines, so treat it as early software. There are no prebuilt binaries yet.
+**Status:** v0.x, early software. Tests run against a fake AWS CLI and never contact AWS. I've only used it on my own machines.
 
-**What it is not:** access control. It's a confirmation prompt and a context check that runs on your machine before AWS CLI. Anyone with a shell can run `aws` directly, so real limits belong in IAM policies, permission boundaries, and service control policies.
+**Not access control.** It's a confirmation prompt and account check on your machine. Anyone with a shell can run `aws` directly, so real limits belong in IAM policies, permission boundaries, and service control policies.
 
 ## Where it fits
 
@@ -18,11 +18,11 @@ It doesn't replace AWS CLI. AWS CLI v2 still handles configuration, credentials,
 | Limits that can't be bypassed | IAM, permission boundaries, SCPs, and role design |
 | A prompt and account check at the moment you run a risky CLI command | **aws-clip** |
 
-aws-clip is built for the last row. It works beside the others: it uses whatever login path a profile already declares and doesn't store credentials. What it adds is a check, at the moment of a risky command, that the profile resolves to the account you expect, plus a printed target and a confirmation for anything that isn't clearly read-only. A typical case is a shell that still points at production when you meant development.
+aws-clip works beside the others. It uses the login path a profile already declares and stores no credentials. At the moment of a risky command, it checks that the profile resolves to the expected account, prints the target, and asks for confirmation unless the command is clearly read-only. The typical catch is a shell still pointed at production when you meant development.
 
 ## Install
 
-You need AWS CLI v2 on `PATH` (or its path set in config).
+You need AWS CLI v2 on `PATH`, or its path set in config.
 
 With Go 1.22 or newer:
 
@@ -31,7 +31,7 @@ go install github.com/neon1llc/aws-clip/cmd/aws-clip@latest
 aws-clip doctor
 ```
 
-Or download a prebuilt binary for macOS or Linux (arm64 or amd64) from the [latest release](https://github.com/neon1llc/aws-clip/releases/latest). Check it against `checksums.txt` and put it on your `PATH`:
+Or download a macOS or Linux binary (arm64 or amd64) from the [latest release](https://github.com/neon1llc/aws-clip/releases/latest), check it against `checksums.txt`, and put it on your `PATH`:
 
 ```sh
 sha256sum --check --ignore-missing checksums.txt   # on macOS: shasum -a 256 --check --ignore-missing checksums.txt
@@ -53,9 +53,9 @@ aws-clip profiles
 aws-clip profiles --format json
 ```
 
-The text view shows Region, authentication path, SSO account and role when configured, selection, and protection status. It never prints access key IDs, credential-process commands, SSO start URLs, login-session names, or credential values. The JSON response has `schema_version: 1` and an ordered `profiles` array. An unavailable Region is `null`.
+The text view shows Region, authentication path, SSO account and role when configured, selection, and protection status. It never prints access key IDs, credential-process commands, SSO start URLs, login-session names, or credential values. JSON output has `schema_version: 1` and an ordered `profiles` array, with `null` for an unavailable Region.
 
-`aws-clip` doesn't create profiles. Create one with AWS CLI, then select it explicitly:
+`aws-clip` doesn't create profiles. Create one with AWS CLI, then select it:
 
 ```sh
 aws configure sso --profile development
@@ -63,7 +63,7 @@ aws-clip --profile development login
 aws-clip --profile development context
 ```
 
-You can also select a profile with `AWS_CLIP_PROFILE` or the configuration file. Login and guarded commands never fall back to AWS CLI's default profile.
+You can also select a profile with `AWS_CLIP_PROFILE` or the configuration file. Login and guarded commands never fall back to the default profile.
 
 ## Log in and out
 
@@ -75,45 +75,45 @@ You can also select a profile with `AWS_CLIP_PROFILE` or the configuration file.
 - Configured profiles with no declared provider can bootstrap AWS local login after an identity probe fails, if your AWS CLI supports it.
 - Static keys, credential processes, web identity, instance or container roles, and the default provider chain stay with their own provider.
 
-After login, `aws-clip` checks STS identity again and reports the account and principal.
+Afterward, `aws-clip` checks STS identity again and reports the account and principal.
 
 ```sh
 aws-clip --profile production login
 aws-clip --profile development logout
 ```
 
-Local-login logout affects only its login profile. AWS CLI's SSO logout clears every cached SSO session, so `aws-clip` asks you to say so:
+Local-login logout affects only its login profile. SSO logout clears every cached SSO session, so `aws-clip` makes you approve that:
 
 ```sh
 aws-clip --profile development logout --approve all-sso-sessions
 ```
 
-Profiles backed by external or static providers have no login or logout action. The message names the provider to refresh.
+Profiles on external or static providers have no login or logout action. The message names the provider to refresh.
 
 ## Verify the active context
 
-`context` calls `aws sts get-caller-identity` through the selected profile and reports non-secret context only.
+`context` calls `aws sts get-caller-identity` through the selected profile and reports non-secret details only.
 
 ```sh
 aws-clip --profile production --region us-east-1 context
 aws-clip --profile production context --format json
 ```
 
-It reports profile, observed account ID, principal ARN, user ID, role or user name, effective Region, credential source, source profile, and account-guard state. JSON output is a stable `schema_version: 1` contract. Safety decisions use the observed STS account, not the profile name.
+It reports profile, observed account ID, principal ARN, user ID, role or user name, effective Region, credential source, source profile, and account-guard state. JSON output is a stable `schema_version: 1` contract. Safety decisions use the observed STS account, never the profile name.
 
 Region precedence: wrapper flag, `AWS_CLIP_REGION`, user configuration, `AWS_REGION`, `AWS_DEFAULT_REGION`, then the AWS profile. Unset retry and timeout settings defer to AWS CLI.
 
 ## Guarded commands
 
-`exec` is stricter than `aws --profile`. It requires an explicit profile, rejects arguments that change context, classifies the operation, applies local policy, and prints the profile, Region, classification, and decision on stderr. Then it passes literal arguments and standard streams to AWS CLI:
+`exec` is stricter than `aws --profile`. It requires an explicit profile, rejects arguments that change context, classifies the operation, applies local policy, and prints the profile, Region, classification, and decision on stderr. Then it passes literal arguments and standard streams to AWS CLI.
 
 ```sh
 aws-clip --profile development exec -- ec2 describe-instances --output json
 ```
 
-The `--` separator is mandatory, and nothing after it goes through a shell. Set `--profile` and `--region` before `exec`. After the separator, `--profile`, `--region`, `--endpoint-url`, and `--no-sign-request` are rejected because they would change the resolved target.
+The `--` separator is mandatory, and nothing after it goes through a shell. Set `--profile` and `--region` before `exec`. After the separator, `--profile`, `--region`, `--endpoint-url`, and `--no-sign-request` are rejected because they would change the target.
 
-Only documented non-mutating families count as read-only: `list-*`, `describe-*`, `get-*`, `head-*`, `lookup-*`, `search-*`, `validate-*`, and `wait`. Known mutations and unrecognized operations need confirmation. Interactive use prompts with the target context. Non-interactive use fails unless you pass `--yes`. Known credential-, token-, and secret-returning operations need the same confirmation even when the name looks read-only:
+Only these families count as read-only: `list-*`, `describe-*`, `get-*`, `head-*`, `lookup-*`, `search-*`, `validate-*`, and `wait`. Known mutations and unrecognized operations need confirmation, as do known credential-, token-, and secret-returning operations even when the name looks read-only. Interactive use prompts with the target context. Non-interactive use fails unless you pass `--yes`.
 
 ```sh
 aws-clip --profile development exec -- ec2 terminate-instances --instance-ids i-example
@@ -121,22 +121,22 @@ aws-clip --profile development exec --yes -- \
   ec2 terminate-instances --instance-ids i-example
 ```
 
-`--preview` is local. It resolves the executable path but starts no AWS CLI process, runs no identity check, and prints no option values. A Region inherited only from the AWS profile shows as unresolved, so pass `--region` if the preview must check a Region allowlist.
+`--preview` is local. It starts no AWS CLI process, runs no identity check, and prints no option values. A Region inherited only from the AWS profile shows as unresolved, so pass `--region` if the preview must check a Region allowlist.
 
 ```sh
 aws-clip --profile development --region us-east-1 exec --preview -- \
   secretsmanager put-secret-value --secret-id example --secret-string hidden
 ```
 
-The preview shows only `secretsmanager:put-secret-value` and the option names `--secret-id` and `--secret-string`.
+The preview shows `secretsmanager:put-secret-value` and the option names `--secret-id` and `--secret-string`, nothing more.
 
-Classification is conservative and name-based, so a new, aliased, or ambiguous operation counts as mutating. Policy and confirmation add to IAM, service control policies, budgets, backups, and change management. They don't judge argument values or remote state.
+Classification is conservative and name-based, so a new, aliased, or ambiguous operation counts as mutating. It doesn't judge argument values or remote state, and it adds to IAM, service control policies, budgets, backups, and change management rather than replacing them.
 
-The list of read-looking operations that return secrets is hand-maintained. A new AWS operation that returns credentials under a `get-` name looks read-only until someone adds it. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
+I maintain the list of read-looking operations that return secrets by hand. A new AWS operation that returns credentials under a `get-` name looks read-only until it's added. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
 
 ### Restrict direct commands
 
-Command policy lives in the file only. Deny rules always win. When `allow` isn't empty, the command must match it, and so must each non-empty target allowlist.
+Command policy lives in the configuration file only. Deny rules always win. When `allow` isn't empty, the command must match it, and so must each non-empty target allowlist.
 
 ```json
 {
@@ -152,11 +152,11 @@ Command policy lives in the file only. Deny rules always win. When `allow` isn't
 }
 ```
 
-An account allowlist runs `sts get-caller-identity` just before confirmation and the command. `--yes` can't override an account mismatch. Without an account allowlist or protected profile, ordinary execution doesn't call STS. `--approve-account` also requests the identity check and requires a matching account. It doesn't replace `--yes` for non-interactive changes.
+An account allowlist runs `sts get-caller-identity` just before confirmation, and `--yes` can't override a mismatch. Without an account allowlist or protected profile, `exec` doesn't call STS. `--approve-account` also requests the identity check and requires a matching account, but it doesn't replace `--yes` for non-interactive changes.
 
 ### Protect production profiles
 
-Bind a high-risk profile to its expected 12-digit account in the configuration file:
+Bind a high-risk profile to its 12-digit account in the configuration file:
 
 ```json
 {
@@ -168,9 +168,9 @@ Bind a high-risk profile to its expected 12-digit account in the configuration f
 }
 ```
 
-Every live `context` or `exec` check fails with the identity-mismatch status if `production` resolves to another account. On the right account, every non-read operation still needs interactive confirmation or `--yes`. Add `--approve-account 123456789012` for an extra identity-bound check. Protection is file-only, so an environment variable or flag can't weaken it.
+If `production` resolves to another account, every live `context` or `exec` check fails with the identity-mismatch status. On the right account, every non-read operation still needs interactive confirmation or `--yes`. Add `--approve-account 123456789012` for an identity-bound check. Protection is file-only, so no environment variable or flag can weaken it.
 
-For isolation, `context`, `login`, `exec`, and workflow runs block credential environment variables such as `AWS_ACCESS_KEY_ID`, `AWS_SESSION_TOKEN`, web-identity settings, and container credential endpoints. Only the names are reported. Clear them when the profile should be authoritative. If you want environment credentials, use AWS CLI directly.
+`context`, `login`, `exec`, and workflow runs block credential environment variables such as `AWS_ACCESS_KEY_ID`, `AWS_SESSION_TOKEN`, web-identity settings, and container credential endpoints, and report only their names. Clear them so the profile is authoritative. To use environment credentials, run AWS CLI directly.
 
 ## Doctor
 
@@ -179,11 +179,11 @@ aws-clip doctor
 aws-clip --profile production doctor
 ```
 
-`doctor` checks AWS CLI v2, resolves the aws-clip configuration, lists configured profiles, and looks for credential environment conflicts. With an explicit profile it also reports the authentication path and Region, verifies identity through STS, and validates any protected account binding. Failed checks name the next command to run. AWS diagnostic text and exit status stay available when a subprocess fails.
+`doctor` checks AWS CLI v2, resolves the aws-clip configuration, lists configured profiles, and looks for credential environment conflicts. With an explicit profile it also reports the authentication path and Region, verifies identity through STS, and validates any protected account binding. Failed checks name the next command to run.
 
 ## Reviewed workflows
 
-A Makefile or script is usually simpler for plain repeatability. Use an aws-clip workflow only when you want its strict schema, policy review, named approval, identity check, account guard, literal arguments, fail-fast execution, and per-step visibility.
+For plain repeatability, a Makefile or script is simpler. Use a workflow when you want policy review, named approval, an identity check, and fail-fast execution with per-step output.
 
 A workflow is a versioned JSON file of named AWS CLI steps:
 
@@ -219,17 +219,17 @@ aws-clip --profile production plan release-check.json
 aws-clip --profile production plan --format json release-check.json
 ```
 
-The plan shows effective context, protected account configuration, whether account approval is needed, each `service:operation`, and its policy decision. Argument values are omitted because they may hold sensitive data. JSON plans are a `schema_version: 1` contract with ordered steps.
+The plan shows effective context, protected account configuration, whether account approval is needed, and each `service:operation` with its policy decision. It omits argument values because they may hold sensitive data. JSON plans are a `schema_version: 1` contract with ordered steps.
 
 ```sh
 aws-clip --profile production run --approve release-check release-check.json
 ```
 
-A run needs the exact workflow name, an explicit profile, and a live STS identity check. A destructive or sensitive-output step needs `--approve-account`, and so does any change on a protected profile. All policy and approvals are checked before the first step. Steps run in order and stop at the first failure. AWS output and diagnostics are kept, and the failing AWS status is returned unchanged. AWS CLI still handles request retries.
+A run needs the exact workflow name, an explicit profile, and a live STS identity check. A destructive or sensitive-output step needs `--approve-account`, and so does any change on a protected profile. All policy and approvals are checked before the first step. Steps run in order and stop at the first failure, returning the failing AWS status unchanged.
 
 ### Workflow policy
 
-Read-oriented operations (`describe-*`, `get-*`, `head-*`, `list-*`, `lookup-*`, `search-*`, `validate-*`) are allowed by default. Known credential-, token-, and secret-returning operations are blocked even when the name looks read-only. Everything else needs a narrow allow rule. Deny rules always win:
+Read-oriented operations (`describe-*`, `get-*`, `head-*`, `list-*`, `lookup-*`, `search-*`, `validate-*`) are allowed by default, except known credential-, token-, and secret-returning ones. Everything else needs a narrow allow rule. Deny rules always win:
 
 ```json
 {
@@ -251,8 +251,8 @@ Limits:
 
 - Rules use lowercase `service:operation`, with `*` as the only wildcard.
 - At most 100 allow and 100 deny rules.
-- `max_steps` is 1 to 100 and defaults to 20.
-- Workflow files are at most 1 MiB, commands at most 256 arguments and 64 KiB of argument data.
+- `max_steps` is 1 to 100, default 20.
+- Workflow files are at most 1 MiB. Commands are at most 256 arguments and 64 KiB.
 - Names and descriptions are printable single-line text.
 - Unknown JSON fields and trailing data are rejected.
 
@@ -264,7 +264,7 @@ The default file is `aws-clip/config.json` in your platform's user configuration
 - macOS: `$HOME/Library/Application Support`
 - Windows: `%AppData%`
 
-Use `--config PATH` or `AWS_CLIP_CONFIG_FILE` to pick another file. The default file may be absent, but an explicitly selected file must exist. Unknown keys and trailing JSON are errors.
+Use `--config PATH` or `AWS_CLIP_CONFIG_FILE` for another file. The default file may be absent, but an explicitly selected one must exist. Unknown keys and trailing JSON are errors.
 
 Precedence, highest first: wrapper flag, `AWS_CLIP_*` environment, user configuration, wrapper default.
 
@@ -278,27 +278,25 @@ Precedence, highest first: wrapper flag, `AWS_CLIP_*` environment, user configur
 | `--connect-timeout SECONDS` | `AWS_CLIP_CONNECT_TIMEOUT` | `connect_timeout_seconds` | Set AWS socket connection timeout, `0` disables |
 | `--read-timeout SECONDS` | `AWS_CLIP_READ_TIMEOUT` | `read_timeout_seconds` | Set AWS socket read timeout, `0` disables |
 
-`command_policy`, `protected_profiles`, and `workflow_policy` are file-only safety settings. Each command-policy list takes at most 100 entries. For automation, pin and protect the configuration file.
+`command_policy`, `protected_profiles`, and `workflow_policy` are file-only safety settings, with at most 100 entries per command-policy list. For automation, pin and protect the configuration file.
 
-When any standard stream isn't a terminal, `aws-clip` sets `AWS_PAGER` to an empty value and `AWS_CLI_AUTO_PROMPT=off` so automation can't block on a pager or prompt. Interactive runs leave both unchanged.
+When any standard stream isn't a terminal, `aws-clip` sets `AWS_PAGER` to empty and `AWS_CLI_AUTO_PROMPT=off` so automation can't block on a pager or prompt. Interactive runs leave both unchanged.
 
 ## Limits
 
 - `aws-clip` never keeps, writes, prints, exports, or caches credential values.
-- AWS command stdout and stderr belong to AWS and can contain sensitive service data. Protect them like direct AWS CLI output.
-- Classification uses safe configuration metadata and operation names. IAM and AWS Organizations stay authoritative.
-- Direct commands call STS only for an account allowlist, protected profile, or `--approve-account`. Workflows always check identity first.
+- AWS command output belongs to AWS and can contain sensitive service data. Protect it like direct AWS CLI output.
 - The identity check and the service command are separate AWS CLI processes, so an external credential provider can change between them.
-- Environment-backed credentials are outside profile isolation.
-- There's no interactive profile selector, browser-console launcher, or credential exporter.
-- Workflows are sequential. They have no variables, conditionals, output chaining, concurrency, rollback, or remote orchestration.
+- Environment-backed credentials are outside profile isolation. Workflows always check identity first.
+- No interactive profile selector, browser-console launcher, or credential exporter.
+- Workflows are sequential, with no variables, conditionals, output chaining, concurrency, rollback, or remote orchestration.
 - Multi-step workflow stdout is each command's output joined together. Use `exec` for one machine-readable response.
 
 ## Exit statuses
 
 | Status | Meaning |
 | --- | --- |
-| `0` | Requested check or operation succeeded |
+| `0` | The check or operation passed |
 | AWS CLI status | An AWS CLI command started and failed, status unchanged |
 | `2` | Invalid syntax, configuration, profile, workflow, or acknowledgement |
 | `3` | Command or workflow policy, or credential isolation, blocked execution |
@@ -315,7 +313,7 @@ make check
 
 Tests use a local fake executable and never contact AWS.
 
-Releases follow neon1's four [release levels](https://github.com/neon1llc/neon1-corpus/blob/main/corpus/standards/versioning.md#release-levels): Implemented, Verified, Released, and Qualified. CI's checks are the evidence for Verified. Qualified needs use outside the author's machine, following only this README.
+Releases follow neon1's [release levels](https://github.com/neon1llc/neon1-corpus/blob/main/corpus/standards/versioning.md#release-levels): Implemented, Verified, Released, and Qualified. CI is the evidence for Verified. Qualified needs use outside my machines, following only this README.
 
 ## License
 
