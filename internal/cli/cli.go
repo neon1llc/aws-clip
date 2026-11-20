@@ -591,11 +591,9 @@ Wrapper options:
   --connect-timeout SECONDS Set the socket connection timeout (0 disables)
   --read-timeout SECONDS    Set the socket read timeout (0 disables)
 
-Output and workflow options:
+Other options:
   --format text|json         Output as text or stable JSON
   --approve NAME             Workflow name to run, exactly
-
-Safety options:
   --preview                  Show the exec decision without running AWS CLI
   --yes                      Approve a mutating, unknown, or sensitive command
   --approve-account ID       Require this verified account
