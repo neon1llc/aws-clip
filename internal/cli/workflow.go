@@ -289,28 +289,12 @@ func evaluateWorkflowCommand(command string, policy WorkflowPolicy) (bool, strin
 }
 
 // Match only command identity because argument values may contain secrets
+// The list comes from AWS service models (see tools/genops); a few hand-kept patterns cover the rest
 func isSensitiveOutputOperation(command string) bool {
-	for _, pattern := range []string{
-		"codeartifact:get-authorization-token",
-		"cognito-identity:get-credentials-for-identity",
-		"cognito-identity:get-open-id-token*",
-		"connect:get-federation-token",
-		"ec2:get-password-data",
-		"ecr-public:get-authorization-token",
-		"ecr:get-authorization-token",
-		"ecr:get-login-password",
-		"eks:get-token",
-		"gamelift:get-instance-access",
-		"lightsail:get-instance-access-details",
-		"redshift-serverless:get-credentials",
-		"redshift:get-cluster-credentials*",
-		"secretsmanager:*get-secret-value",
-		"secretsmanager:get-random-password",
-		"sso:get-role-credentials",
-		"ssm:get-parameter*",
-		"sts:get-federation-token",
-		"sts:get-session-token",
-	} {
+	if generatedSensitiveOperations[command] {
+		return true
+	}
+	for _, pattern := range manualSensitivePatterns {
 		if wildcardMatch(pattern, command) {
 			return true
 		}
