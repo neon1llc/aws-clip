@@ -2,6 +2,12 @@
 
 AWS CLIP releases use `v0.MINOR.PATCH` until v1.0.0, following neon1's [versioning standard](https://neon1.tech/knowledge/standards/versioning/). Each version below has an annotated tag on its commit. The release workflow adds missing tags and never moves one.
 
+## Unreleased
+
+### Changed
+- The sensitive-output list is generated from AWS service models instead of kept by hand. Read-style operations that return a credential-like member now need confirmation or a workflow allow rule, including `cognito-idp describe-user-pool-client`, `ec2 describe-vpn-connections`, `lightsail get-relational-database-master-user-password`, `sts get-web-identity-token`, and others. A reviewed list of false positives, such as `rds describe-db-instances`, stays read-only.
+- CI checks the list against the pinned `botocore` and compares operation names with botocore's own conversion. A weekly job fails when the newest models add an operation that needs review.
+
 ## v0.2.1 - 2026-11-20
 
 ### Changed

@@ -42,3 +42,32 @@ jobs:
       # commands are refused (internal/cli/execution_policy_test.go). The race detector is on
       - name: go test
         run: go test -race ./...
+
+  # Check the generated sensitive-output list against the pinned AWS service models. A stale
+  # list, or a review entry that no longer matches a model, fails here
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Install the same botocore release the committed list was generated from
+      - name: Install pinned botocore
+        run: python -m pip install -r tools/genops/requirements.txt
+
+      # Compare the committed list with a fresh generation from the models
+      - name: Check generated list
+        run: go run ./tools/genops -models "$(python -c 'import botocore, os; print(os.path.dirname(botocore.__file__))')/data" -check
+
+      # Compare the generator's operation names with botocore's own conversion
+      - name: Check operation names
+        run: |
+          python tools/genops/botocore_names.py > "$RUNNER_TEMP/names.json"
+          GENOPS_NAMES="$RUNNER_TEMP/names.json" go test -run BotocoreNames -v ./tools/genops

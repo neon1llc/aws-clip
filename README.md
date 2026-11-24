@@ -111,7 +111,7 @@ aws-clip --profile development --region us-east-1 exec --preview -- \
   secretsmanager put-secret-value --secret-id example --secret-string hidden
 ```
 
-Classification is name-based, so a new, aliased, or ambiguous operation counts as mutating. It doesn't judge argument values or remote state. I maintain the list of secret-returning operations by hand, so a new one named `get-*` looks read-only until it's added. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
+Classification is name-based, so a new, aliased, or ambiguous operation counts as mutating. It doesn't judge argument values or remote state. Read-style operations that return credentials, such as `get-secret-value` or `describe-user-pool-client`, count as sensitive output. The list is generated from AWS service models: any read-style operation whose output has a credential-like member is on it, minus a short reviewed list of false positives such as `rds describe-db-instances`. A few commands the models can't show, such as `eks get-token`, are listed by hand. The models come from the PyPI `botocore` package, which can differ from the ones bundled in your AWS CLI, and a weekly CI job fails when newer models add an operation that needs review. The rule matches member names, so it can miss an operation with an unusual name. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
 
 ### Restrict direct commands
 
@@ -258,7 +258,10 @@ When any standard stream isn't a terminal, `aws-clip` sets `AWS_PAGER` to empty 
 
 ```sh
 make check
+make check-models   # needs Python; compares the sensitive-output list with the pinned AWS models
 ```
+
+After a review changes `tools/genops/reviewed.json` or the pinned `botocore`, run `make generate`.
 
 Releases follow neon1's [release levels](https://github.com/neon1llc/neon1-corpus/blob/main/corpus/standards/versioning.md#release-levels): Implemented, Verified, Released, and Qualified. CI is the evidence for Verified. Qualified needs use outside my machines, following only this README.
 

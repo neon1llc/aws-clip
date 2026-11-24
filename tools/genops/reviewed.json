@@ -1,0 +1,27 @@
+{
+  "comment": "Human review of AWS service-model candidates. Read-style operations that return a credential-like member are sensitive unless listed under not_returned. manual_patterns cover sensitive operations the models cannot show.",
+  "not_returned": {
+    "chime-sdk-identity:describe-app-instance-user-endpoint": "DeviceToken identifies a push-notification device; it grants no AWS access",
+    "datasync:describe-location-fsx-ontap": "Password sits in a shape shared with the create request; describe responses are not documented to return it",
+    "datasync:describe-location-fsx-open-zfs": "Password sits in a shape shared with the create request; describe responses are not documented to return it",
+    "dms:describe-endpoints": "Password members sit in settings shapes shared with create and modify; describe responses omit them",
+    "ecs:describe-daemon-task-definition": "repositoryCredentials holds a Secrets Manager or Parameter Store ARN, not the secret",
+    "ecs:describe-task-definition": "repositoryCredentials holds a Secrets Manager or Parameter Store ARN, not the secret",
+    "fsx:describe-backups": "FsxAdminPassword is a create and update input; describe responses omit it",
+    "fsx:describe-file-systems": "FsxAdminPassword is a create and update input; describe responses omit it",
+    "fsx:describe-snapshots": "FsxAdminPassword is a create and update input; describe responses omit it",
+    "fsx:describe-volumes": "FsxAdminPassword is a create and update input; describe responses omit it",
+    "rds:describe-db-clusters": "MasterUserPassword appears only in pending-change shapes shared with modify; responses never carry it",
+    "rds:describe-db-instances": "MasterUserPassword appears only in pending-change shapes shared with modify; responses never carry it",
+    "rds:describe-tenant-databases": "MasterUserPassword appears only in pending-change shapes shared with modify; responses never carry it",
+    "redshift:describe-clusters": "MasterUserPassword appears only in pending-change shapes shared with modify; responses never carry it"
+  },
+  "manual_patterns": {
+    "codeartifact:get-authorization-token": "The model does not mark its token sensitive",
+    "ecr-public:get-authorization-token": "The model does not mark its token sensitive",
+    "ecr:get-authorization-token": "The model does not mark its token sensitive",
+    "ecr:get-login-password": "A customization of the AWS CLI with no service-model operation",
+    "eks:get-token": "A customization of the AWS CLI with no service-model operation",
+    "ssm:get-parameter*": "Values are secret for SecureString parameters, and the model marks the member by name, not by type"
+  }
+}
