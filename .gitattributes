@@ -1,0 +1,2 @@
+# Go sources stay LF on every platform so gofmt passes on Windows
+* text=auto eol=lf
