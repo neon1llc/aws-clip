@@ -1,6 +1,6 @@
-# AWS CLI Plus
+# AWS CLIP
 
-AWS CLI Plus (`aws-clip`) sits in front of AWS CLI v2 for multi-profile work. It finds your profiles, logs in through each profile's own path, checks the active account and principal, and confirms risky commands against the account you expect. For one-off work, use `aws` directly.
+AWS CLIP (AWS CLI Plus, `aws-clip`) sits in front of AWS CLI v2 for multi-profile work. It finds your profiles, logs in through each profile's own path, checks the active account and principal, and confirms risky commands against the account you expect. For one-off work, use `aws` directly.
 
 **Status:** v0.x, early software. Tests run against a fake AWS CLI and never contact AWS. I've only used it on my own machines.
 
