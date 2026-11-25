@@ -37,6 +37,7 @@ func TestExecRefusesKnownAndUnknownChangesWithoutConfirmation(t *testing.T) {
 	}{
 		{"known mutation", []string{"ec2", "terminate-instances", "--instance-ids", "i-example"}, "classification=mutating"},
 		{"unknown operation", []string{"example", "future-operation", "--token", "hidden"}, "classification=unknown; treated as mutating"},
+		{"unreviewed read-shaped operation", []string{"example", "get-future-operation"}, "classification=unknown; treated as mutating"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -51,6 +52,23 @@ func TestExecRefusesKnownAndUnknownChangesWithoutConfirmation(t *testing.T) {
 				t.Fatal("unconfirmed target command ran")
 			}
 		})
+	}
+}
+
+// Sensitive reads require the same confirmation gate as writes
+func TestExecRequiresConfirmationForSensitiveOutput(t *testing.T) {
+	fake := makeProcessAlias(t, "fake-aws")
+	callLog := filepath.Join(t.TempDir(), "calls.jsonl")
+	command := []string{"secretsmanager", "get-secret-value", "--secret-id", "example"}
+	rt, stdout, stderr := testRuntime(t, false, nil, "FAKE_CALL_LOG="+callLog)
+
+	status := run(append([]string{"--aws-binary", fake, "--profile", "development", "exec", "--"}, command...), rt)
+
+	if status != exitConfirmation || stdout.Len() != 0 || !strings.Contains(stderr.String(), "classification=read-only; sensitive output") {
+		t.Fatalf("status = %d, stdout = %q, stderr = %q", status, stdout.String(), stderr.String())
+	}
+	if containsCall(readCallLog(t, callLog), command) {
+		t.Fatal("sensitive-output command ran without confirmation")
 	}
 }
 

@@ -71,8 +71,7 @@ func TestGeneratedListEntriesAreReadStyleRules(t *testing.T) {
 		if err := validatePolicyRule(command); err != nil {
 			t.Errorf("%s: %v", command, err)
 		}
-		_, operation, _ := splitCommand(command)
-		if !isReadOperation(operation) {
+		if !isReadOperation(command) {
 			t.Errorf("%s is not a read-style operation", command)
 		}
 	}

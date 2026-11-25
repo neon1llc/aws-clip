@@ -273,8 +273,7 @@ func evaluateWorkflowCommand(command string, policy WorkflowPolicy) (bool, strin
 			return false, "matched configured deny rule"
 		}
 	}
-	_, operation, _ := strings.Cut(command, ":")
-	if isReadOperation(operation) && !isSensitiveOutputOperation(command) {
+	if isReadOperation(command) && !isSensitiveOutputOperation(command) {
 		return true, "read-oriented operation"
 	}
 	for _, rule := range policy.Allow {
@@ -302,15 +301,13 @@ func isSensitiveOutputOperation(command string) bool {
 	return false
 }
 
-// Unrecognized operations default to writes and require configured allowance
-func isReadOperation(operation string) bool {
-	for _, exact := range []string{"describe", "get", "head", "list", "lookup", "ls", "scan", "search", "select", "tail", "validate", "wait"} {
-		if operation == exact {
-			return true
-		}
+// Only exact model operations and explicit AWS CLI custom commands default to reads.
+func isReadOperation(command string) bool {
+	if generatedReadOperations[command] {
+		return true
 	}
-	for _, prefix := range []string{"batch-get-", "describe-", "get-", "head-", "list-", "lookup-", "search-", "validate-"} {
-		if strings.HasPrefix(operation, prefix) {
+	for _, pattern := range manualReadPatterns {
+		if wildcardMatch(pattern, command) {
 			return true
 		}
 	}

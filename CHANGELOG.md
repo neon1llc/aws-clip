@@ -4,7 +4,15 @@ AWS CLIP releases use `v0.MINOR.PATCH` until v1.0.0, following neon1's [versioni
 
 ## Unreleased
 
+### Added
+- CI tests on Linux, macOS, and Windows, checks clean Go installs, cross-builds every release binary target, and scans source files for secrets.
+- Direct execution tests prove sensitive-output reads need confirmation and are not started when confirmation is missing.
+
 ### Changed
+- README install commands now match the platform-specific binary names and checksum tools.
+- Require Go 1.26 or later and test the current supported Go lines across Linux, macOS, and Windows.
+- Read-only classification now uses exact AWS model operations and reviewed AWS CLI custom commands; unreviewed read-shaped names require confirmation.
+- Workflow actions are pinned to immutable commits.
 - The sensitive-output list is generated from AWS service models instead of kept by hand. Read-style operations that return a credential-like member now need confirmation or a workflow allow rule, including `cognito-idp describe-user-pool-client`, `ec2 describe-vpn-connections`, `lightsail get-relational-database-master-user-password`, `sts get-web-identity-token`, and others. A reviewed list of false positives, such as `rds describe-db-instances`, stays read-only.
 - CI checks the list against the pinned `botocore` and compares operation names with botocore's own conversion. A weekly job fails when the newest models add an operation that needs review.
 

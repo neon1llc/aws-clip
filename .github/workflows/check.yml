@@ -14,16 +14,23 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Exercise the process and terminal adapters on each documented desktop platform
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ["1.26.x", "1.27.x"]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: go.mod
+          go-version: ${{ matrix.go }}
 
       # Formatting: fail and list the files if any are not gofmt-clean
       - name: gofmt
+        shell: bash
         run: |
           unformatted="$(gofmt -l .)"
           if [ -n "$unformatted" ]; then
@@ -38,23 +45,45 @@ jobs:
       - name: go build
         run: go build ./...
 
-      # The tests include the fail-closed policy tests: denied, unknown, and unconfirmed
-      # commands are refused (internal/cli/execution_policy_test.go). The race detector is on
+      # Unknown commands, sensitive reads, and unconfirmed mutations are tested through the process boundary
       - name: go test
         run: go test -race ./...
+
+      # Install the package into an empty bin directory, then run the installed executable without AWS
+      - name: Install from checkout
+        env:
+          GOBIN: ${{ runner.temp }}/aws-clip-bin
+        run: go install ./cmd/aws-clip
+
+      - name: Check installed command on Unix
+        if: runner.os != 'Windows'
+        run: ${{ runner.temp }}/aws-clip-bin/aws-clip --help
+
+      - name: Check installed command on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& "$env:RUNNER_TEMP\aws-clip-bin\aws-clip.exe" --help'
+
+      # Cross-build every binary target in the release workflow on one runner
+      - name: Build release targets
+        if: runner.os == 'Linux'
+        run: |
+          for target in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64; do
+            GOOS="${target%/*}" GOARCH="${target#*/}" CGO_ENABLED=0 go build -o /dev/null ./cmd/aws-clip
+          done
 
   # Check the generated sensitive-output list against the pinned AWS service models. A stale
   # list, or a review entry that no longer matches a model, fails here
   models:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version-file: go.mod
+          go-version: stable
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.13"
 
@@ -71,3 +100,23 @@ jobs:
         run: |
           python tools/genops/botocore_names.py > "$RUNNER_TEMP/names.json"
           GENOPS_NAMES="$RUNNER_TEMP/names.json" go test -run BotocoreNames -v ./tools/genops
+
+  # Scan tracked source files with the MIT-licensed Gitleaks CLI, avoiding action license and permissions
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: stable
+
+      - name: Install Gitleaks
+        run: |
+          go install github.com/zricethezav/gitleaks/v8@v8.30.1
+
+      - name: Scan repository files
+        run: |
+          "$(go env GOPATH)/bin/gitleaks" dir --no-banner --redact --exit-code 1 .

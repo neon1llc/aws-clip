@@ -1,5 +1,9 @@
 {
-  "comment": "Human review of AWS service-model candidates. Read-style operations that return a credential-like member are sensitive unless listed under not_returned. manual_patterns cover sensitive operations the models cannot show.",
+  "comment": "Human review of AWS service-model candidates. Read-style operations that return a credential-like member are sensitive unless listed under not_returned. manual_read_patterns cover AWS CLI read commands absent from service models. manual_patterns cover sensitive operations the models cannot show.",
+  "manual_read_patterns": {
+    "*:wait": "AWS CLI waiter commands poll until a modeled condition is met",
+    "s3:ls": "High-level S3 listing command is a customization absent from service models"
+  },
   "not_returned": {
     "chime-sdk-identity:describe-app-instance-user-endpoint": "DeviceToken identifies a push-notification device; it grants no AWS access",
     "datasync:describe-location-fsx-ontap": "Password sits in a shape shared with the create request; describe responses are not documented to return it",
