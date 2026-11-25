@@ -586,7 +586,7 @@ func classifyExecutionCommand(arguments []string) executionOperation {
 		Changing:       true,
 		Sensitive:      isSensitiveOutputOperation(command),
 	}
-	if isReadOperation(arguments[1]) {
+	if isReadOperation(command) {
 		operation.Classification = "read-only"
 		operation.Changing = false
 	} else if isKnownMutatingOperation(arguments[0], arguments[1]) {

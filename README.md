@@ -19,7 +19,7 @@ aws-clip works beside the others and stores no credentials. It catches a shell s
 
 ## Install
 
-Needs AWS CLI v2 on `PATH`. With Go 1.22 or newer:
+Needs AWS CLI v2 on `PATH`. With Go 1.26 or newer:
 
 ```sh
 go install github.com/neon1llc/aws-clip/cmd/aws-clip@latest
@@ -29,10 +29,26 @@ aws-clip doctor
 Or download a macOS or Linux binary (arm64 or amd64) from the [latest release](https://github.com/neon1llc/aws-clip/releases/latest) and check it against `checksums.txt`:
 
 ```sh
-sha256sum --check --ignore-missing checksums.txt   # on macOS: shasum -a 256 --check --ignore-missing checksums.txt
-chmod +x aws-clip_linux_amd64 && mv aws-clip_linux_amd64 ~/.local/bin/aws-clip
+# Linux amd64
+sha256sum --check --ignore-missing checksums.txt
+chmod +x aws-clip_linux_amd64
+mv aws-clip_linux_amd64 ~/.local/bin/aws-clip
+```
+
+```sh
+# macOS arm64
+shasum -a 256 --check --ignore-missing checksums.txt
+chmod +x aws-clip_darwin_arm64
+mv aws-clip_darwin_arm64 ~/.local/bin/aws-clip
+```
+
+Then confirm that AWS CLI v2 is on `PATH` and run:
+
+```sh
 aws-clip doctor
 ```
+
+Release binaries are provided for Linux and macOS on amd64 and arm64. Windows amd64 is supported through `go install`; prebuilt Windows binaries are not provided. CI tests Go 1.26 and 1.27 on Linux, macOS, and Windows.
 
 Or build from a clone:
 
@@ -111,7 +127,7 @@ aws-clip --profile development --region us-east-1 exec --preview -- \
   secretsmanager put-secret-value --secret-id example --secret-string hidden
 ```
 
-Classification is name-based, so a new, aliased, or ambiguous operation counts as mutating. It doesn't judge argument values or remote state. Read-style operations that return credentials, such as `get-secret-value` or `describe-user-pool-client`, count as sensitive output. The list is generated from AWS service models: any read-style operation whose output has a credential-like member is on it, minus a short reviewed list of false positives such as `rds describe-db-instances`. A few commands the models can't show, such as `eks get-token`, are listed by hand. The models come from the PyPI `botocore` package, which can differ from the ones bundled in your AWS CLI, and a weekly CI job fails when newer models add an operation that needs review. The rule matches member names, so it can miss an operation with an unusual name. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
+Classification uses exact service and operation names from reviewed AWS service models, plus a short reviewed list for AWS CLI commands that have no model entry. A newly introduced or unfamiliar operation requires confirmation even when its name starts with `get-` or `describe-`. Classification does not inspect argument values or remote state. Read-style operations that return credentials, such as `get-secret-value` or `describe-user-pool-client`, count as sensitive output. The sensitive-output list is generated from AWS service models: any read-style operation whose output has a credential-like member is on it, minus a short reviewed list of false positives such as `rds describe-db-instances`. A few commands the models can't show, such as `eks get-token`, are listed by hand. The models come from the PyPI `botocore` package, which can differ from the ones bundled in your AWS CLI, and a weekly CI job fails when newer models add an operation that needs review. The rule matches member names, so it can miss an operation with an unusual name. [Open an issue](https://github.com/neon1llc/aws-clip/issues) if you find one.
 
 ### Restrict direct commands
 
@@ -268,3 +284,7 @@ Releases follow neon1's [release levels](https://github.com/neon1llc/neon1-corpu
 ## License
 
 [MIT](LICENSE)
+
+## v1.0 readiness
+
+[Exit criteria and current evidence](docs/v1-readiness.md).

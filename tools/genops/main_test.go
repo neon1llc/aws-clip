@@ -73,7 +73,7 @@ func TestCandidatesFromModel(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(directory, "service-2.json"), []byte(model), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	found, _, err := candidates(filepath.Dir(filepath.Dir(directory)))
+	reads, found, _, err := candidates(filepath.Dir(filepath.Dir(directory)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,6 +88,11 @@ func TestCandidatesFromModel(t *testing.T) {
 	for _, operation := range got {
 		if !want[operation] {
 			t.Errorf("unexpected candidate %s", operation)
+		}
+	}
+	for _, operation := range []string{"demo:get-secret-thing", "demo:get-note", "demo:list-names", "demo:get-page-token", "demo:get-nested"} {
+		if !reads[operation] {
+			t.Errorf("missing exact read operation %s", operation)
 		}
 	}
 }

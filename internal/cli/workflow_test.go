@@ -316,6 +316,17 @@ func TestSensitiveOutputOperationsRequireExplicitAllowance(t *testing.T) {
 	}
 }
 
+func TestWorkflowUnknownReadShapedOperationRequiresAllowance(t *testing.T) {
+	command := "example:get-future-operation"
+	if allowed, reason := evaluateWorkflowCommand(command, WorkflowPolicy{}); allowed || reason != "operation is not read-oriented or explicitly allowed" {
+		t.Fatalf("default decision = allowed %t, reason %q", allowed, reason)
+	}
+	policy := WorkflowPolicy{Allow: []string{command}}
+	if allowed, reason := evaluateWorkflowCommand(command, policy); !allowed || reason != "matched configured allow rule" {
+		t.Fatalf("configured decision = allowed %t, reason %q", allowed, reason)
+	}
+}
+
 func writeWorkflow(t *testing.T, content string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "workflow.json")
