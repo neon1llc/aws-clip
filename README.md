@@ -13,9 +13,9 @@ AWS CLIP (AWS CLI Plus) sits in front of AWS CLI v2 for multi-profile work. It f
 | Short-lived credentials, SSO login, profile config | AWS CLI v2 itself: [`aws configure sso`](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html) and [`aws login`](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html) |
 | Fast role switching and several consoles open at once | [Granted](https://github.com/fwdcloudsec/granted) |
 | Storing long-lived IAM keys in an OS keystore | An actively maintained [aws-vault fork](https://github.com/ByteNess/aws-vault), since the [original](https://github.com/99designs/aws-vault) is abandoned. Better, move off long-lived keys |
-| A prompt and account check at the moment you run a risky CLI command | **aws-clip** |
+| A prompt and account check at the moment you run a risky CLI command | **AWS CLIP** |
 
-aws-clip works beside the others and stores no credentials. It catches a shell still pointed at production when you meant development.
+AWS CLIP works beside the others and stores no credentials. It catches a shell still pointed at production when you meant development.
 
 ## Install
 
